@@ -3,6 +3,8 @@ name: Build Windows EXE
 on:
   push:
     branches: [ main ]
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -11,10 +13,10 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     
@@ -26,15 +28,15 @@ jobs:
     
     - name: Build EXE
       run: |
-        pyinstaller --name "劳动法数据库v2" \
-          --windowed \
-          --onefile \
-          --add-data "src;src" \
-          --add-data "assets;assets" \
-          --hidden-import PyQt6.sip \
-          --hidden-import sqlite3 \
-          --hidden-import docx \
-          --hidden-import lxml \
+        pyinstaller --name "劳动法数据库v2" `
+          --windowed `
+          --onefile `
+          --add-data "src;src" `
+          --add-data "assets;assets" `
+          --hidden-import PyQt6.sip `
+          --hidden-import sqlite3 `
+          --hidden-import docx `
+          --hidden-import lxml `
           main.py
     
     - name: Package with assets
@@ -47,13 +49,13 @@ jobs:
         powershell Compress-Archive -Path "劳动法数据库v2" -DestinationPath "劳动法数据库v2-Windows-EXE.zip"
     
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: windows-exe
         path: 劳动法数据库v2-Windows-EXE.zip
     
     - name: Upload to Release
-      if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+      if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v1
       with:
         files: 劳动法数据库v2-Windows-EXE.zip
