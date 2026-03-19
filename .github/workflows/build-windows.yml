@@ -1,0 +1,61 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        pip install -r requirements.txt
+    
+    - name: Build EXE
+      run: |
+        pyinstaller --name "劳动法数据库v2" \
+          --windowed \
+          --onefile \
+          --add-data "src;src" \
+          --add-data "assets;assets" \
+          --hidden-import PyQt6.sip \
+          --hidden-import sqlite3 \
+          --hidden-import docx \
+          --hidden-import lxml \
+          main.py
+    
+    - name: Package with assets
+      run: |
+        mkdir -p "劳动法数据库v2"
+        copy "dist\劳动法数据库v2.exe" "劳动法数据库v2\"
+        xcopy /E /I assets "劳动法数据库v2\assets"
+        copy README.md "劳动法数据库v2\"
+        copy WINDOWS_INSTALL.md "劳动法数据库v2\"
+        powershell Compress-Archive -Path "劳动法数据库v2" -DestinationPath "劳动法数据库v2-Windows-EXE.zip"
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: windows-exe
+        path: 劳动法数据库v2-Windows-EXE.zip
+    
+    - name: Upload to Release
+      if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: 劳动法数据库v2-Windows-EXE.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
